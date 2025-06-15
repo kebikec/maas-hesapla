@@ -18,5 +18,14 @@ her ayın verisini tek tek girmeye gerek yok. kırılım noktaları yeterli.
 Şu anda *tuik-aylik.json* dosyası elle girilmek zorunda 
 https://legalbank.net/belge/enflasyon-oranlari-tefe-ufe-tufe-oranlari/3225950
 Kodun bir sonraki geliştirmesinde API ile çektirmek mümkün. 
+Neden TÜİK? 
+Tüik verilerinin makyajlı olduğunun farkında değil miyim?
+Farkındayım siz o veriyi istediğiniz şeyle değiştirmekte özgürsünüz
+
+Dummy data ile oluşturulmuş ekran görüntüleri
+![döviz](screen-1.jpg "döviz")
+![TL](screen-2.jpg "TL")
+
 
 Kodu çalıştırdınız moraliniz mi bozuldu? O zaman gidin bir sendikaya üye olun. Çöpçü şu kadar alıyor ben niye bu kadar alıyorum diye cakcak etmeyin. Örgütsüz olduğun sürece sömürülmeye mahkumsun!
+
