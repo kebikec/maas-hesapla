@@ -6,10 +6,12 @@ Döviz kur verisini TCMB den otomatik çeker. API key falan istemez.
 *maas.json* dosyasını elle güncellemeniz gerekli. 
 hangi format veri girileceğini anlamanız için dummy data girdim.
 
-> "2023"	 : 25555,
-  "2023-03"	 : 26666,
-  "2023-08"	 : 27777,
-  "2024"	 : 25555,
+```
+"2023"    : 25555,
+"2023-03" : 26666,
+"2023-08" : 27777,
+"2024"    : 25555,
+```
 
 türünden veri girerek sene içindeki zamları tanımlayabilirsiniz. 
 her ayın verisini tek tek girmeye gerek yok. kırılım noktaları yeterli. 
@@ -28,12 +30,15 @@ Dummy data ile oluşturulmuş ekran görüntüleri
 
 
 Kodu çalıştırdınız ve moraliniz mi bozuldu? O zaman gidin bir sendikaya üye olun. Çöpçü şu kadar alıyor ben niye bu kadar alıyorum diye cakcak etmeyin. 
+
 Örgütsüz olduğunuz sürece sömürülmeye mahkumsunuz!
 
 ### CHANGELOG
 
 0.93 (2025-06-16)
+
 değişken isimleri tutarlı hale getirildi.
 
 0.92 (2025-06-15)
+
 İlk yayınlanış. 
