@@ -1,4 +1,4 @@
-## MAAŞ Hesapla v0.92
+## MAAŞ Hesapla v0.93
 **Amaç:** Patron sizi ne kadar kazıklıyor bunu görüp moraliniz bozulsun diye yazılmış kod. 
 
 Döviz kur verisini TCMB den otomatik çeker. API key falan istemez. 
@@ -27,5 +27,13 @@ Dummy data ile oluşturulmuş ekran görüntüleri
 ![TL](screen-2.jpg "TL")
 
 
-Kodu çalıştırdınız moraliniz mi bozuldu? O zaman gidin bir sendikaya üye olun. Çöpçü şu kadar alıyor ben niye bu kadar alıyorum diye cakcak etmeyin. Örgütsüz olduğun sürece sömürülmeye mahkumsun!
+Kodu çalıştırdınız ve moraliniz mi bozuldu? O zaman gidin bir sendikaya üye olun. Çöpçü şu kadar alıyor ben niye bu kadar alıyorum diye cakcak etmeyin. 
+Örgütsüz olduğunuz sürece sömürülmeye mahkumsunuz!
 
+### CHANGELOG
+
+0.93 (2025-06-16)
+değişken isimleri tutarlı hale getirildi.
+
+0.92 (2025-06-15)
+İlk yayınlanış. 

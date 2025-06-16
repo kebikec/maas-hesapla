@@ -3,7 +3,7 @@
 $maas_dosyasi = __DIR__ . '/maas.json';
 $doviz_kur_dosyasi = __DIR__ . '/doviz-kuru.json';
 $enf_orani_dosyasi = __DIR__ . '/tuik-aylik.json';
-$log_file = __DIR__ . '/hata-kaydi.txt';
+$log_dosyasi = __DIR__ . '/hata-kaydi.txt';
 
 // Maaş verilerini yükle
 $maaslar = [];
@@ -12,9 +12,9 @@ if (file_exists($maas_dosyasi)) {
 } else { die('Hata: maas.json dosyası bulunamadı.'); }
 
 // Döviz kurlarını yükle
-$doviz_kur_degeri = [];
+$doviz_kurlari = [];
 if (file_exists($doviz_kur_dosyasi)) {
-    $doviz_kur_degeri = json_decode(file_get_contents($doviz_kur_dosyasi), true) ?: [];
+    $doviz_kurlari = json_decode(file_get_contents($doviz_kur_dosyasi), true) ?: [];
 }
 
 // Enflasyon verilerini yükle
@@ -24,91 +24,91 @@ if (file_exists($enf_orani_dosyasi)) {
 } else { die('Hata: tuik-aylik.json dosyası bulunamadı.'); }
 
 // Belirli tarih için maaş getir
-function getSalaryForDate($date, $salaries) {
-    $target_date = strtotime($date);
-    $applicable_salary = null;
-    $latest_applicable_date = 0;
-    foreach ($salaries as $key => $salary) {        
-        if (strpos($key, '_comment') === 0) {
+function maasiTarihIleGetir($tarih, $maaslar) {
+    $hedef_tarih = strtotime($tarih);
+    $uygun_maas = null;
+    $en_yakin_tarih = 0;
+    foreach ($maaslar as $anahtar => $maas) {        
+        if (strpos($anahtar, '_comment') === 0) {
             continue;
         }        
-        $entry_date = null;        
+        $giris_tarihi = null;        
         // sadece yıl ise ("2023")
-        if (preg_match('/^\d{4}$/', $key)) {
-            $entry_date = strtotime($key . '-01-01');
+        if (preg_match('/^\d{4}$/', $anahtar)) {
+            $giris_tarihi = strtotime($anahtar . '-01-01');
         }
         // yıl-ay düzeni ("2024-08")
-        elseif (preg_match('/^\d{4}-\d{2}$/', $key)) {
-            $entry_date = strtotime($key . '-01');
+        elseif (preg_match('/^\d{4}-\d{2}$/', $anahtar)) {
+            $giris_tarihi = strtotime($anahtar . '-01');
         }        
         // Bu giriş hedef tarih için geçerliyse ve en yakın tarihse
-        if ($entry_date && $entry_date <= $target_date && $entry_date > $latest_applicable_date) {
-            $latest_applicable_date = $entry_date;
-            $applicable_salary = $salary;
+        if ($giris_tarihi && $giris_tarihi <= $hedef_tarih && $giris_tarihi > $en_yakin_tarih) {
+            $en_yakin_tarih = $giris_tarihi;
+            $uygun_maas = $maas;
         }
     }    
-    return $applicable_salary;
+    return $uygun_maas;
 }
 
 // Maaş verilerindeki yılları getir
-function getYearsFromSalaries($salaries) {
-    $years = [];
-    foreach ($salaries as $key => $salary) {
-        if (strpos($key, '_comment') === 0) {
+function yillariMaaslardanGetir($maaslar) {
+    $yillar = [];
+    foreach ($maaslar as $anahtar => $maas) {
+        if (strpos($anahtar, '_comment') === 0) {
             continue;
         }        
-        if (preg_match('/^(\d{4})/', $key, $matches)) {
-            $years[] = intval($matches[1]);
+        if (preg_match('/^(\d{4})/', $anahtar, $eslesenler)) {
+            $yillar[] = intval($eslesenler[1]);
         }
     }
-    return array_unique($years);
+    return array_unique($yillar);
 }
 
 // İş günü kontrolü
-function isGunuMu($date) {
-    $day_of_week = date('N', strtotime($date));
-    return $day_of_week >= 1 && $day_of_week <= 5;
+function isGunuMu($tarih) {
+    $haftanin_gunu = date('N', strtotime($tarih));
+    return $haftanin_gunu >= 1 && $haftanin_gunu <= 5;
 }
 
 // Ayın ilk iş gününü getir
-function ilkIsgununuGetir($year, $month) {
-    $date = sprintf('%d-%02d-01', $year, $month);
-    while (!isGunuMu($date)) {
-        $date = date('Y-m-d', strtotime($date . ' +1 day'));
+function ilkIsgununuGetir($yil, $ay) {
+    $tarih = sprintf('%d-%02d-01', $yil, $ay);
+    while (!isGunuMu($tarih)) {
+        $tarih = date('Y-m-d', strtotime($tarih . ' +1 day'));
     }
-    return $date;
+    return $tarih;
 }
 
 // Döviz kuru getir (tek tarih)
-function fetchExchangeRate($date, &$exchange_rates, $exchange_rates_file, $log_file) {
-    $date_key = $date;
-    if (isset($exchange_rates[$date_key]) && $exchange_rates[$date_key] !== 'Veri yok') {
-        return $exchange_rates[$date_key];
+function dovizKuruGetir($tarih, &$doviz_kurlari, $doviz_kur_dosyasi, $log_dosyasi) {
+    $tarih_anahtari = $tarih;
+    if (isset($doviz_kurlari[$tarih_anahtari]) && $doviz_kurlari[$tarih_anahtari] !== 'Veri yok') {
+        return $doviz_kurlari[$tarih_anahtari];
     }    
-    $context = stream_context_create([
+    $baglam = stream_context_create([
         'http' => [
             'timeout' => 10,
             'user_agent' => 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
         ]
     ]);    
-    $today = date('Y-m-d');
-    if ($date === $today) {
-        $urls_to_try = [
+    $bugun = date('Y-m-d');
+    if ($tarih === $bugun) {
+        $denenecek_adresler = [
           "https://www.tcmb.gov.tr/kurlar/today.xml",
           "https://www.tcmb.gov.tr/kurlar/" . date('Ym') . "/" . date('dmY') . ".xml"
         ];
-        foreach ($urls_to_try as $url) {
-            $xml_content = @file_get_contents($url, false, $context);
-            if ($xml_content !== false) {
-                $xml = @simplexml_load_string($xml_content);
+        foreach ($denenecek_adresler as $adres) {
+            $xml_icerik = @file_get_contents($adres, false, $baglam);
+            if ($xml_icerik !== false) {
+                $xml = @simplexml_load_string($xml_icerik);
                 if ($xml !== false) {
-                    foreach ($xml->Currency as $cur) {
-                        if ($cur['Kod'] == 'USD') {
-                            $rate = floatval($cur->ForexBuying);
-                            if ($rate > 0) {
-                                $exchange_rates[$date] = $rate;
-                                file_put_contents($exchange_rates_file, json_encode($exchange_rates, JSON_PRETTY_PRINT));
-                                return $rate;
+                    foreach ($xml->Currency as $kur) {
+                        if ($kur['Kod'] == 'USD') {
+                            $kur_degeri = floatval($kur->ForexBuying);
+                            if ($kur_degeri > 0) {
+                                $doviz_kurlari[$tarih] = $kur_degeri;
+                                file_put_contents($doviz_kur_dosyasi, json_encode($doviz_kurlari, JSON_PRETTY_PRINT));
+                                return $kur_degeri;
                             }
                         }
                     }
@@ -117,25 +117,25 @@ function fetchExchangeRate($date, &$exchange_rates, $exchange_rates_file, $log_f
         }
     }
     // Tarihi geçmiş için
-    $yil_ay = date('Ym', strtotime($date));
-    $gun_ay_yil = date('dmY', strtotime($date));
-    $tam_tarih = date('Ymd', strtotime($date));
-    $urls_to_try = [
+    $yil_ay = date('Ym', strtotime($tarih));
+    $gun_ay_yil = date('dmY', strtotime($tarih));
+    $tam_tarih = date('Ymd', strtotime($tarih));
+    $denenecek_adresler = [
        "https://www.tcmb.gov.tr/kurlar/{$yil_ay}/{$gun_ay_yil}.xml",
        "https://www.tcmb.gov.tr/kurlar/{$yil_ay}/{$tam_tarih}.xml"
     ];
-    foreach ($urls_to_try as $url) {
-        $xml_content = @file_get_contents($url, false, $context);
-        if ($xml_content !== false) {
-            $xml = @simplexml_load_string($xml_content);
+    foreach ($denenecek_adresler as $adres) {
+        $xml_icerik = @file_get_contents($adres, false, $baglam);
+        if ($xml_icerik !== false) {
+            $xml = @simplexml_load_string($xml_icerik);
             if ($xml !== false) {
-                foreach ($xml->Currency as $cur) {
-                    if ($cur['Kod'] == 'USD') {
-                        $rate = floatval($cur->ForexBuying);
-                        if ($rate > 0) {
-                           $exchange_rates[$date] = $rate;
-                           file_put_contents($exchange_rates_file, json_encode($exchange_rates, JSON_PRETTY_PRINT));
-                           return $rate;
+                foreach ($xml->Currency as $kur) {
+                    if ($kur['Kod'] == 'USD') {
+                        $kur_degeri = floatval($kur->ForexBuying);
+                        if ($kur_degeri > 0) {
+                           $doviz_kurlari[$tarih] = $kur_degeri;
+                           file_put_contents($doviz_kur_dosyasi, json_encode($doviz_kurlari, JSON_PRETTY_PRINT));
+                           return $kur_degeri;
                         }
                     }
                 }
@@ -143,59 +143,59 @@ function fetchExchangeRate($date, &$exchange_rates, $exchange_rates_file, $log_f
         }
     }
     // Eğer iş günü değilse
-    $attempts = 0;
-    $prev_date = $date;
-    $next_date = $date;
-    while ($attempts < 5) {
-        $prev_date = date('Y-m-d', strtotime($prev_date . ' -1 day'));
-        $next_date = date('Y-m-d', strtotime($next_date . ' +1 day'));
+    $deneme_sayisi = 0;
+    $onceki_tarih = $tarih;
+    $sonraki_tarih = $tarih;
+    while ($deneme_sayisi < 5) {
+        $onceki_tarih = date('Y-m-d', strtotime($onceki_tarih . ' -1 day'));
+        $sonraki_tarih = date('Y-m-d', strtotime($sonraki_tarih . ' +1 day'));
         // Önceki gün denemesi
-        if (isGunuMu($prev_date)) {
-            $rate = tryFetchRateForDate($prev_date, $context);
-            if ($rate !== null) {
-                $exchange_rates[$date] = $rate;
-                $exchange_rates[$prev_date] = $rate;
-                file_put_contents($exchange_rates_file, json_encode($exchange_rates, JSON_PRETTY_PRINT));
-                return $rate;
+        if (isGunuMu($onceki_tarih)) {
+            $kur_degeri = tarihIcinKurDegeriDene($onceki_tarih, $baglam);
+            if ($kur_degeri !== null) {
+                $doviz_kurlari[$tarih] = $kur_degeri;
+                $doviz_kurlari[$onceki_tarih] = $kur_degeri;
+                file_put_contents($doviz_kur_dosyasi, json_encode($doviz_kurlari, JSON_PRETTY_PRINT));
+                return $kur_degeri;
             }
         }
         // Sonraki gün
-        if (isGunuMu($next_date) && strtotime($next_date) <= time()) {
-            $rate = tryFetchRateForDate($next_date, $context);
-            if ($rate !== null) {
-               $exchange_rates[$date] = $rate;
-               $exchange_rates[$next_date] = $rate;
-               file_put_contents($exchange_rates_file, json_encode($exchange_rates, JSON_PRETTY_PRINT));
-               return $rate;
+        if (isGunuMu($sonraki_tarih) && strtotime($sonraki_tarih) <= time()) {
+            $kur_degeri = tarihIcinKurDegeriDene($sonraki_tarih, $baglam);
+            if ($kur_degeri !== null) {
+               $doviz_kurlari[$tarih] = $kur_degeri;
+               $doviz_kurlari[$sonraki_tarih] = $kur_degeri;
+               file_put_contents($doviz_kur_dosyasi, json_encode($doviz_kurlari, JSON_PRETTY_PRINT));
+               return $kur_degeri;
             }
         }        
-        $attempts++;
+        $deneme_sayisi++;
     }
     // Hata kaydı bas
-    file_put_contents($log_file, "Veri alınamadı: $date - " . date('Y-m-d H:i:s') . "\n", FILE_APPEND);
-    $exchange_rates[$date] = 'Veri yok';
-    file_put_contents($exchange_rates_file, json_encode($exchange_rates, JSON_PRETTY_PRINT));
+    file_put_contents($log_dosyasi, "Veri alınamadı: $tarih - " . date('Y-m-d H:i:s') . "\n", FILE_APPEND);
+    $doviz_kurlari[$tarih] = 'Veri yok';
+    file_put_contents($doviz_kur_dosyasi, json_encode($doviz_kurlari, JSON_PRETTY_PRINT));
     return null;
 }
 // Yardımcı döviz kuru getirme fonksiyonu
-function tryFetchRateForDate($date, $context) {
-    $year_month = date('Ym', strtotime($date));
-    $day_month_year = date('dmY', strtotime($date));
-    $full_date = date('Ymd', strtotime($date));
-    $urls_to_try = [
-        "https://www.tcmb.gov.tr/kurlar/{$year_month}/{$day_month_year}.xml",
-        "https://www.tcmb.gov.tr/kurlar/{$year_month}/{$full_date}.xml"
+function tarihIcinKurDegeriDene($tarih, $baglam) {
+    $yil_ay = date('Ym', strtotime($tarih));
+    $gun_ay_yil = date('dmY', strtotime($tarih));
+    $tam_tarih = date('Ymd', strtotime($tarih));
+    $denenecek_adresler = [
+        "https://www.tcmb.gov.tr/kurlar/{$yil_ay}/{$gun_ay_yil}.xml",
+        "https://www.tcmb.gov.tr/kurlar/{$yil_ay}/{$tam_tarih}.xml"
     ];
-    foreach ($urls_to_try as $url) {
-        $xml_content = @file_get_contents($url, false, $context);
-        if ($xml_content !== false) {
-            $xml = @simplexml_load_string($xml_content);
+    foreach ($denenecek_adresler as $adres) {
+        $xml_icerik = @file_get_contents($adres, false, $baglam);
+        if ($xml_icerik !== false) {
+            $xml = @simplexml_load_string($xml_icerik);
             if ($xml !== false) {
-                foreach ($xml->Currency as $cur) {
-                    if ($cur['Kod'] == 'USD') {
-                        $rate = floatval($cur->ForexBuying);
-                        if ($rate > 0) {
-                            return $rate;
+                foreach ($xml->Currency as $kur) {
+                    if ($kur['Kod'] == 'USD') {
+                        $kur_degeri = floatval($kur->ForexBuying);
+                        if ($kur_degeri > 0) {
+                            return $kur_degeri;
                         }
                     }
                 }
@@ -206,123 +206,123 @@ function tryFetchRateForDate($date, $context) {
 }
 
 // Toplu döviz kuru getir (çoklu tarih)
-function fetchExchangeRatesParallel($dates, &$exchange_rates, $exchange_rates_file, $log_file) {
-    $mh = curl_multi_init();
-    $curl_handles = [];
-    $date_to_handle = [];
-    foreach ($dates as $date) {
-        if (!isset($exchange_rates[$date]) || $exchange_rates[$date] === 'Veri yok') {
-            $today = date('Y-m-d');
-            if ($date === $today) {
-                $url = "https://www.tcmb.gov.tr/kurlar/today.xml";
+function topluDovizKuruGetir($tarihler, &$doviz_kurlari, $doviz_kur_dosyasi, $log_dosyasi) {
+    $coklu_baglanti = curl_multi_init();
+    $curl_handlelari = [];
+    $tarih_handle_eslesmesi = [];
+    foreach ($tarihler as $tarih) {
+        if (!isset($doviz_kurlari[$tarih]) || $doviz_kurlari[$tarih] === 'Veri yok') {
+            $bugun = date('Y-m-d');
+            if ($tarih === $bugun) {
+                $adres = "https://www.tcmb.gov.tr/kurlar/today.xml";
             } else {
-                $year_month = date('Ym', strtotime($date));
-                $day_month_year = date('dmY', strtotime($date));
-                $url = "https://www.tcmb.gov.tr/kurlar/{$year_month}/{$day_month_year}.xml";
+                $yil_ay = date('Ym', strtotime($tarih));
+                $gun_ay_yil = date('dmY', strtotime($tarih));
+                $adres = "https://www.tcmb.gov.tr/kurlar/{$yil_ay}/{$gun_ay_yil}.xml";
             }
             $ch = curl_init();
-            curl_setopt($ch, CURLOPT_URL, $url);
+            curl_setopt($ch, CURLOPT_URL, $adres);
             curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
             curl_setopt($ch, CURLOPT_TIMEOUT, 10);
             curl_setopt($ch, CURLOPT_USERAGENT, 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36');
             curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
             curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
-            curl_multi_add_handle($mh, $ch);
-            $curl_handles[] = $ch;
-            $date_to_handle[$date] = $ch;
+            curl_multi_add_handle($coklu_baglanti, $ch);
+            $curl_handlelari[] = $ch;
+            $tarih_handle_eslesmesi[$tarih] = $ch;
         }
     }
-    if (empty($curl_handles)) {
-        curl_multi_close($mh);
+    if (empty($curl_handlelari)) {
+        curl_multi_close($coklu_baglanti);
         return;
     }
-    $running = null;
+    $calisiyor = null;
     do {
-        $status = curl_multi_exec($mh, $running);
-        if ($running) {
-            curl_multi_select($mh);
+        $durum = curl_multi_exec($coklu_baglanti, $calisiyor);
+        if ($calisiyor) {
+            curl_multi_select($coklu_baglanti);
         }
-    } while ($running > 0 && $status == CURLM_OK);
-    foreach ($date_to_handle as $date => $ch) {
-        $xml_data = curl_multi_getcontent($ch);
-        $rate = null;
-        if ($xml_data !== false && !empty($xml_data)) {
-            $xml = @simplexml_load_string($xml_data);
+    } while ($calisiyor > 0 && $durum == CURLM_OK);
+    foreach ($tarih_handle_eslesmesi as $tarih => $ch) {
+        $xml_verisi = curl_multi_getcontent($ch);
+        $kur_degeri = null;
+        if ($xml_verisi !== false && !empty($xml_verisi)) {
+            $xml = @simplexml_load_string($xml_verisi);
             if ($xml !== false) {
-                foreach ($xml->Currency as $cur) {
-                    if ($cur['Kod'] == 'USD') {
-                        $rate = floatval($cur->ForexBuying);
-                        if ($rate > 0) {
-                            $exchange_rates[$date] = $rate;
+                foreach ($xml->Currency as $kur) {
+                    if ($kur['Kod'] == 'USD') {
+                        $kur_degeri = floatval($kur->ForexBuying);
+                        if ($kur_degeri > 0) {
+                            $doviz_kurlari[$tarih] = $kur_degeri;
                             break;
                         }
                     }
                 }
             }
         }        
-        if ($rate === null || $rate == 0) {
+        if ($kur_degeri === null || $kur_degeri == 0) {
             // Fallback to individual fetch
-            $rate = fetchExchangeRate($date, $exchange_rates, $exchange_rates_file, $log_file);
+            $kur_degeri = dovizKuruGetir($tarih, $doviz_kurlari, $doviz_kur_dosyasi, $log_dosyasi);
         }        
-        curl_multi_remove_handle($mh, $ch);
+        curl_multi_remove_handle($coklu_baglanti, $ch);
         curl_close($ch);
     }    
-    curl_multi_close($mh);
-    file_put_contents($exchange_rates_file, json_encode($exchange_rates, JSON_PRETTY_PRINT));
+    curl_multi_close($coklu_baglanti);
+    file_put_contents($doviz_kur_dosyasi, json_encode($doviz_kurlari, JSON_PRETTY_PRINT));
 }
 
 // Yıllık verileri hesapla
-function calculateYearlyData($salaries, &$exchange_rates, $inflation_rates, $exchange_rates_file, $log_file) {
-    $years = getYearsFromSalaries($salaries);
-    $baslangic_yili = min($years);
-    $suAnki_yil = date('Y');
-    $end_year = max($suAnki_yil, max($years));
+function yillikVerileriHesapla($maaslar, &$doviz_kurlari, $enf_oranlari, $doviz_kur_dosyasi, $log_dosyasi) {
+    $yillar = yillariMaaslardanGetir($maaslar);
+    $baslangic_yili = min($yillar);
+    $su_anki_yil = date('Y');
+    $bitis_yili = max($su_anki_yil, max($yillar));
     $aylar = ['Ocak', 'Şubat', 'Mart', 'Nisan', 'Mayıs', 'Haziran', 'Temmuz', 'Ağustos', 'Eylül', 'Ekim', 'Kasım', 'Aralık'];
     $sonuclar = [];
-    $dates_to_fetch = [];
+    $getirilecek_tarihler = [];
     // Pre-fetch için tarihleri hazırla
-    for ($year = $baslangic_yili; $year <= $end_year; $year++) {
-        $month_limit = ($year == $suAnki_yil) ? date('n') : 12;
-        for ($month = 1; $month <= $month_limit; $month++) {
-            $date = ilkIsgununuGetir($year, $month);
-            if (!isset($exchange_rates[$date]) || $exchange_rates[$date] === 'Veri yok') {
-                $dates_to_fetch[] = $date;
+    for ($yil = $baslangic_yili; $yil <= $bitis_yili; $yil++) {
+        $ay_limiti = ($yil == $su_anki_yil) ? date('n') : 12;
+        for ($ay = 1; $ay <= $ay_limiti; $ay++) {
+            $tarih = ilkIsgununuGetir($yil, $ay);
+            if (!isset($doviz_kurlari[$tarih]) || $doviz_kurlari[$tarih] === 'Veri yok') {
+                $getirilecek_tarihler[] = $tarih;
             }
         }
     }
     // Toplu döviz kuru getir
-    if (!empty($dates_to_fetch)) {
-        fetchExchangeRatesParallel($dates_to_fetch, $exchange_rates, $exchange_rates_file, $log_file);
+    if (!empty($getirilecek_tarihler)) {
+        topluDovizKuruGetir($getirilecek_tarihler, $doviz_kurlari, $doviz_kur_dosyasi, $log_dosyasi);
     }
     // Hesapla
-    for ($year = $baslangic_yili; $year <= $end_year; $year++) {
-        $monthly_usd = [];
-        $month_limit = ($year == $suAnki_yil) ? date('n') : 12;
-        for ($month = 1; $month <= $month_limit; $month++) {
-            $date = ilkIsgununuGetir($year, $month);
-            $salary = getSalaryForDate($date, $salaries);
-            if ($salary !== null) {
-                $rate = $exchange_rates[$date] ?? 'Veri yok';
-                if ($rate !== 'Veri yok' && $rate > 0) {
-                    $usd = $salary / $rate;
-                    $monthly_usd[$aylar[$month - 1]] = number_format($usd, 2);
+    for ($yil = $baslangic_yili; $yil <= $bitis_yili; $yil++) {
+        $aylik_usd = [];
+        $ay_limiti = ($yil == $su_anki_yil) ? date('n') : 12;
+        for ($ay = 1; $ay <= $ay_limiti; $ay++) {
+            $tarih = ilkIsgununuGetir($yil, $ay);
+            $maas = maasiTarihIleGetir($tarih, $maaslar);
+            if ($maas !== null) {
+                $kur = $doviz_kurlari[$tarih] ?? 'Veri yok';
+                if ($kur !== 'Veri yok' && $kur > 0) {
+                    $usd = $maas / $kur;
+                    $aylik_usd[$aylar[$ay - 1]] = number_format($usd, 2);
                 } else {
-                    $monthly_usd[$aylar[$month - 1]] = 'Veri yok';
+                    $aylik_usd[$aylar[$ay - 1]] = 'Veri yok';
                 }
             } else {
-                $monthly_usd[$aylar[$month - 1]] = 'Maaş tanımı yok';
+                $aylik_usd[$aylar[$ay - 1]] = 'Maaş tanımı yok';
             }
         }
-        if (!empty($monthly_usd)) {
-            $valid_usd = array_filter($monthly_usd, function($v) { 
+        if (!empty($aylik_usd)) {
+            $gecerli_usd = array_filter($aylik_usd, function($v) { 
                 return $v !== 'Veri yok' && $v !== 'Maaş tanımı yok'; 
             });
-            $numeric_values = array_map(function($v) { 
+            $sayisal_degerler = array_map(function($v) { 
                 return floatval(str_replace(',', '', $v)); 
-            }, $valid_usd);
-            $sonuclar[$year] = [
-                'average' => !empty($numeric_values) ? number_format(array_sum($numeric_values) / count($numeric_values), 2) : 'Veri yok',
-                'monthly' => $monthly_usd
+            }, $gecerli_usd);
+            $sonuclar[$yil] = [
+                'average' => !empty($sayisal_degerler) ? number_format(array_sum($sayisal_degerler) / count($sayisal_degerler), 2) : 'Veri yok',
+                'monthly' => $aylik_usd
             ];
         }
     }
@@ -330,82 +330,82 @@ function calculateYearlyData($salaries, &$exchange_rates, $inflation_rates, $exc
 }
 
 // Grafik verilerini hazırla
-function prepareChartData($salaries, $exchange_rates, $inflation_rates) {
-    $chart_labels = [];
-    $chart_data = [];
-    $average_data = [];
-    $inflation_adjusted_salary_data = [];
-    $inflation_adjusted_average_data = [];
-    $months_short = ['Oca', 'Şub', 'Mar', 'Nis', 'May', 'Haz', 'Tem', 'Ağu', 'Eyl', 'Eki', 'Kas', 'Ara'];
-    $years = getYearsFromSalaries($salaries);
-    $start_year = min($years);
-    $current_year = date('Y');
-    $end_year = max($current_year, max($years));
-    $cumulative_sum = 0;
-    $month_count = 0;
-    $inflation_adjusted_salary = 100; // İlk ay maaş 100 TL (2022-07)
-    $inflation_cumulative_sum = 0;
-    $inflation_month_count = 0;
+function grafikVerileriniHazirla($maaslar, $doviz_kurlari, $enf_oranlari) {
+    $grafik_etiketleri = [];
+    $grafik_verileri = [];
+    $ortalama_verileri = [];
+    $enf_duzeltilmis_maas_verileri = [];
+    $enf_duzeltilmis_ortalama_verileri = [];
+    $aylar_kisa = ['Oca', 'Şub', 'Mar', 'Nis', 'May', 'Haz', 'Tem', 'Ağu', 'Eyl', 'Eki', 'Kas', 'Ara'];
+    $yillar = yillariMaaslardanGetir($maaslar);
+    $baslangic_yili = min($yillar);
+    $su_anki_yil = date('Y');
+    $bitis_yili = max($su_anki_yil, max($yillar));
+    $birikimli_toplam = 0;
+    $ay_sayisi = 0;
+    $enf_duzeltilmis_maas = 100; // İlk ay maaş 100 TL (2022-07)
+    $enf_birikimli_toplam = 0;
+    $enf_ay_sayisi = 0;
     
     // İlk maaş tarihini ve nominal maaşları belirle
-    $ilk_maas_gunu = null;
+    $ilk_maas_tarihi = null;
     $ilk_maas = null;
-    foreach ($salaries as $key => $salary) {
-        if (strpos($key, '_comment') === 0) continue;
-        $entry_date = null;
-        if (preg_match('/^\d{4}$/', $key)) {
-            $entry_date = $key . '-01-01';
-        } elseif (preg_match('/^\d{4}-\d{2}$/', $key)) {
-            $entry_date = $key . '-01';
+    foreach ($maaslar as $anahtar => $maas) {
+        if (strpos($anahtar, '_comment') === 0) continue;
+        $giris_tarihi = null;
+        if (preg_match('/^\d{4}$/', $anahtar)) {
+            $giris_tarihi = $anahtar . '-01-01';
+        } elseif (preg_match('/^\d{4}-\d{2}$/', $anahtar)) {
+            $giris_tarihi = $anahtar . '-01';
         }
-        if ($entry_date && (!$ilk_maas_gunu || strtotime($entry_date) < strtotime($ilk_maas_gunu))) {
-            $ilk_maas_gunu = $entry_date;
-            $ilk_maas = $salary;
+        if ($giris_tarihi && (!$ilk_maas_tarihi || strtotime($giris_tarihi) < strtotime($ilk_maas_tarihi))) {
+            $ilk_maas_tarihi = $giris_tarihi;
+            $ilk_maas = $maas;
         }
     }
 
-    $current_nominal_salary = 100; // Başlangıç nominal maaş
-    $base_inflation = 1; // Birikimli enflasyon oranı (başlangıçta 1)
+    $su_anki_nominal_maas = 100; // Başlangıç nominal maaş
+    $temel_enflasyon = 1; // Birikimli enflasyon oranı (başlangıçta 1)
 
-    for ($year = $start_year; $year <= $end_year; $year++) {
-        $month_limit = ($year == $current_year) ? date('n') : 12;
-        for ($month = 1; $month <= $month_limit; $month++) {
-            $date = ilkIsgununuGetir($year, $month);
-            $nominal_salary = getSalaryForDate($date, $salaries);
-            if ($nominal_salary !== null && strtotime($date) >= strtotime($ilk_maas_gunu)) {
-                $rate = $exchange_rates[$date] ?? null;
-                if ($rate !== null && $rate !== 'Veri yok' && $rate > 0) {
-                    $usd = $nominal_salary / $rate;
-                    $cumulative_sum += $usd;
-                    $month_count++;
-                    $chart_labels[] = $months_short[$month - 1] . ' ' . $year;
-                    $chart_data[] = round($usd, 2);
-                    $average_data[] = round($cumulative_sum / $month_count, 2);
+    for ($yil = $baslangic_yili; $yil <= $bitis_yili; $yil++) {
+        $ay_limiti = ($yil == $su_anki_yil) ? date('n') : 12;
+        for ($ay = 1; $ay <= $ay_limiti; $ay++) {
+            $tarih = ilkIsgununuGetir($yil, $ay);
+            $nominal_maas = maasiTarihIleGetir($tarih, $maaslar);
+            if ($nominal_maas !== null && strtotime($tarih) >= strtotime($ilk_maas_tarihi)) {
+                $kur = $doviz_kurlari[$tarih] ?? null;
+                if ($kur !== null && $kur !== 'Veri yok' && $kur > 0) {
+                    $usd = $nominal_maas / $kur;
+                    $birikimli_toplam += $usd;
+                    $ay_sayisi++;
+                    $grafik_etiketleri[] = $aylar_kisa[$ay - 1] . ' ' . $yil;
+                    $grafik_verileri[] = round($usd, 2);
+                    $ortalama_verileri[] = round($birikimli_toplam / $ay_sayisi, 2);
 
                     // Enflasyon düzeltilmiş maaş hesaplama
-                    $inflation_key = sprintf('%d-%02d', $year, $month);
-                    if (strtotime($date) === strtotime($ilk_maas_gunu)) {
-                        $inflation_adjusted_salary = 100; // Başlangıç ayında 100 TL
-                        $base_inflation = 1; // Enflasyonu sıfırla
-                    } elseif (isset($inflation_rates[$inflation_key])) {
-                        $inflation_rate = $inflation_rates[$inflation_key] / 100; // Yüzdeyi ondalığa çevir
-                        $base_inflation *= (1 + $inflation_rate); // Birikimli enflasyon
+                    $enf_anahtari = sprintf('%d-%02d', $yil, $ay);
+                    if (strtotime($tarih) === strtotime($ilk_maas_tarihi)) {
+                        $enf_duzeltilmis_maas = 100; // Başlangıç ayında 100 TL
+                        $temel_enflasyon = 1; // Enflasyonu sıfırla
+                    } elseif (isset($enf_oranlari[$enf_anahtari])) {
+                        $enf_orani = $enf_oranlari[$enf_anahtari] / 100; // Yüzdeyi ondalığa çevir
+                        $temel_enflasyon *= (1 + $enf_orani); // Birikimli enflasyon
                         // Reel maaş = Nominal maaşın başlangıç maaşına oranı * (100 / birikimli enflasyon)
-                        $inflation_adjusted_salary = (100 / $base_inflation) * ($nominal_salary / $ilk_maas);
+                        $enf_duzeltilmis_maas = (100 / $temel_enflasyon) * ($nominal_maas / $ilk_maas);
                     }
-                    $inflation_adjusted_salary_data[] = round($inflation_adjusted_salary, 2);
-                    $inflation_cumulative_sum += $inflation_adjusted_salary;
-                    $inflation_month_count++;
-                    $inflation_adjusted_average_data[] = round($inflation_cumulative_sum / $inflation_month_count, 2);
+                    $enf_duzeltilmis_maas_verileri[] = round($enf_duzeltilmis_maas, 2);
+                    $enf_birikimli_toplam += $enf_duzeltilmis_maas;
+                    $enf_ay_sayisi++;
+                    $enf_duzeltilmis_ortalama_verileri[] = round($enf_birikimli_toplam / $enf_ay_sayisi, 2);
                 }
             }
         }
     }    
     return [
-        'labels' => $chart_labels,
-        'salary_data' => $chart_data,
-        'average_data' => $average_data,
-        'inflation_adjusted_salary_data' => $inflation_adjusted_salary_data,
-        'inflation_adjusted_average_data' => $inflation_adjusted_average_data
+        'labels' => $grafik_etiketleri,
+        'salary_data' => $grafik_verileri,
+        'average_data' => $ortalama_verileri,
+        'inflation_adjusted_salary_data' => $enf_duzeltilmis_maas_verileri,
+        'inflation_adjusted_average_data' => $enf_duzeltilmis_ortalama_verileri
     ];
 }

@@ -1,10 +1,10 @@
 <?php
 require_once __DIR__ . '/func.php';
 // Verileri hesapla
-$results = calculateYearlyData($maaslar, $exchange_rates, $enf_orani, $doviz_kur_dosyasi, $log_file);
-$chartData = prepareChartData($maaslar, $exchange_rates, $enf_orani);
+$sonuclar = yillikVerileriHesapla($maaslar, $doviz_kurlari, $enf_orani, $doviz_kur_dosyasi, $log_dosyasi);
+$grafikVerileri = grafikVerileriniHazirla($maaslar, $doviz_kurlari, $enf_orani);
 // Aylar için türkçe array
-$months = ['Ocak', 'Şubat', 'Mart', 'Nisan', 'Mayıs', 'Haziran', 'Temmuz', 'Ağustos', 'Eylül', 'Ekim', 'Kasım', 'Aralık'];
+$aylar = ['Ocak', 'Şubat', 'Mart', 'Nisan', 'Mayıs', 'Haziran', 'Temmuz', 'Ağustos', 'Eylül', 'Ekim', 'Kasım', 'Aralık'];
 ?>
 <!DOCTYPE html>
 <html lang="tr">
@@ -32,46 +32,46 @@ h3 {color : #333; border-bottom : 2px solid #036de1; padding-bottom : 5px;}
         <div class="maas-bilgi">
             <h4>Maaş Bilgileri:</h4>
             <?php
-            foreach ($maaslar as $key => $salary) {
-                if (strpos($key, '_comment') === 0) continue;                
-                if (preg_match('/^\d{4}$/', $key)) {
-                    echo "<p><strong>$key:</strong> " . number_format($salary) . " TL (Tüm yıl)</p>";
-                } elseif (preg_match('/^(\d{4})-(\d{2})$/', $key, $matches)) {
-                    $year = $matches[1];
-                    $month = $matches[2];
-                    $month_name = $months[intval($month) - 1];
-                    echo "<p><strong>$year $month_name:</strong> " . number_format($salary) . " TL (Bu tarihten itibaren)</p>";
+            foreach ($maaslar as $anahtar => $maas) {
+                if (strpos($anahtar, '_comment') === 0) continue;                
+                if (preg_match('/^\d{4}$/', $anahtar)) {
+                    echo "<p><strong>$anahtar:</strong> " . number_format($maas) . " TL (Tüm yıl)</p>";
+                } elseif (preg_match('/^(\d{4})-(\d{2})$/', $anahtar, $eslesenler)) {
+                    $yil = $eslesenler[1];
+                    $ay = $eslesenler[2];
+                    $ay_adi = $aylar[intval($ay) - 1];
+                    echo "<p><strong>$yil $ay_adi:</strong> " . number_format($maas) . " TL (Bu tarihten itibaren)</p>";
                 }
             }
             ?>
         </div>        
-        <?php if (isset($results) && !empty($results)): ?>
+        <?php if (isset($sonuclar) && !empty($sonuclar)): ?>
             <div class="results">
                 <?php
-                $result_years = array_keys($results);
-                for ($i = 0; $i < count($result_years); $i += 2) {
+                $sonuc_yillari = array_keys($sonuclar);
+                for ($i = 0; $i < count($sonuc_yillari); $i += 2) {
                     echo '<div class="year-row">';
-                    $year1 = $result_years[$i];
+                    $yil1 = $sonuc_yillari[$i];
                     echo '<div class="year-column">';
-                    echo '<h3>' . $year1 . ' Yılı</h3>';
-                    echo '<p class="ortalama">Ortalama Aylık Maaş: ' . $results[$year1]['average'] . ' $</p>';
-                    foreach ($results[$year1]['monthly'] as $month => $usd) {
-                        $class = 'success';
-                        if ($usd === 'Veri yok') $class = 'error';
-                        elseif ($usd === 'Maaş tanımı yok') $class = 'warning';
-                        echo '<p class="' . $class . '">' . $month . ': ' . $usd . ' $</p>';
+                    echo '<h3>' . $yil1 . ' Yılı</h3>';
+                    echo '<p class="ortalama">Ortalama Aylık Maaş: ' . $sonuclar[$yil1]['average'] . ' $</p>';
+                    foreach ($sonuclar[$yil1]['monthly'] as $ay => $usd) {
+                        $sinif = 'success';
+                        if ($usd === 'Veri yok') $sinif = 'error';
+                        elseif ($usd === 'Maaş tanımı yok') $sinif = 'warning';
+                        echo '<p class="' . $sinif . '">' . $ay . ': ' . $usd . ' $</p>';
                     }
                     echo '</div>';                    
-                    if (isset($result_years[$i + 1])) {
-                        $year2 = $result_years[$i + 1];
+                    if (isset($sonuc_yillari[$i + 1])) {
+                        $yil2 = $sonuc_yillari[$i + 1];
                         echo '<div class="year-column">';
-                        echo '<h3>' . $year2 . ' Yılı</h3>';
-                        echo '<p class="ortalama">Ortalama Aylık Maaş: ' . $results[$year2]['average'] . ' $</p>';
-                        foreach ($results[$year2]['monthly'] as $month => $usd) {
-                            $class = 'success';
-                            if ($usd === 'Veri yok') $class = 'error';
-                            elseif ($usd === 'Maaş tanımı yok') $class = 'warning';
-                            echo '<p class="' . $class . '">' . $month . ': ' . $usd . ' $</p>';
+                        echo '<h3>' . $yil2 . ' Yılı</h3>';
+                        echo '<p class="ortalama">Ortalama Aylık Maaş: ' . $sonuclar[$yil2]['average'] . ' $</p>';
+                        foreach ($sonuclar[$yil2]['monthly'] as $ay => $usd) {
+                            $sinif = 'success';
+                            if ($usd === 'Veri yok') $sinif = 'error';
+                            elseif ($usd === 'Maaş tanımı yok') $sinif = 'warning';
+                            echo '<p class="' . $sinif . '">' . $ay . ': ' . $usd . ' $</p>';
                         }
                         echo '</div>';
                     }
@@ -108,10 +108,10 @@ document.addEventListener('DOMContentLoaded', function() {
 	const salaryChart = new Chart(ctx, {
 		type: 'line',
 		data: {
-			labels: <?= json_encode($chartData['labels']) ?>,
+			labels: <?= json_encode($grafikVerileri['labels']) ?>,
 			datasets: [{
 				label: 'Aylık Maaş (USD)',
-				data: <?= json_encode($chartData['salary_data']) ?>,
+				data: <?= json_encode($grafikVerileri['salary_data']) ?>,
 				borderColor: '#28a745',
 				backgroundColor: 'rgba(40, 167, 69, 0.1)',
 				borderWidth: 3,
@@ -127,7 +127,7 @@ document.addEventListener('DOMContentLoaded', function() {
 				pointHoverBorderWidth: 3
 			}, {
 				label: 'Kümülatif Ortalama Maaş (USD)',
-				data: <?= json_encode($chartData['average_data']) ?>,
+				data: <?= json_encode($grafikVerileri['average_data']) ?>,
 				borderColor: '#007bff',
 				backgroundColor: 'rgba(0, 123, 255, 0.1)',
 				borderWidth: 2,
@@ -262,10 +262,10 @@ document.addEventListener('DOMContentLoaded', function() {
 	const inflationAdjustedChart = new Chart(ctxInflation, {
 		type: 'line',
 		data: {
-			labels: <?= json_encode($chartData['labels']) ?>,
+			labels: <?= json_encode($grafikVerileri['labels']) ?>,
 			datasets: [{
 				label: 'Enflasyon Düzeltilmiş Aylık Maaş (TL)',
-				data: <?= json_encode($chartData['inflation_adjusted_salary_data']) ?>,
+				data: <?= json_encode($grafikVerileri['inflation_adjusted_salary_data']) ?>,
 				borderColor: '#dc3545',
 				backgroundColor: 'rgba(220, 53, 69, 0.1)',
 				borderWidth: 3,
@@ -281,7 +281,7 @@ document.addEventListener('DOMContentLoaded', function() {
 				pointHoverBorderWidth: 3
 			}, {
 				label: 'Kümülatif Ortalama Maaş (TL)',
-				data: <?= json_encode($chartData['inflation_adjusted_average_data']) ?>,
+				data: <?= json_encode($grafikVerileri['inflation_adjusted_average_data']) ?>,
 				borderColor: '#6f42c1',
 				backgroundColor: 'rgba(111, 66, 193, 0.1)',
 				borderWidth: 2,
