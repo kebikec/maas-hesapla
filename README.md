@@ -35,10 +35,10 @@ Kodu çalıştırdınız ve moraliniz mi bozuldu? O zaman gidin bir sendikaya ü
 
 ### CHANGELOG
 
-0.93 (2025-06-16)
+*0.93* (2025-06-16)
 
 değişken isimleri tutarlı hale getirildi.
 
-0.92 (2025-06-15)
+*0.92* (2025-06-15)
 
 İlk yayınlanış. 
