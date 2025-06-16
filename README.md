@@ -21,6 +21,7 @@ Kodun bir sonraki geliştirmesinde API ile çektirmek mümkün.
 veriyi şu adresten alabilirsiniz: https://legalbank.net/belge/enflasyon-oranlari-tefe-ufe-tufe-oranlari/3225950
 
 **Neden TÜİK?** 
+
 Tüik verilerinin makyajlı olduğunun farkında değil miyim?
 Farkındayım siz o veriyi istediğiniz şeyle (enag vb) değiştirmekte özgürsünüz
 
@@ -35,10 +36,10 @@ Kodu çalıştırdınız ve moraliniz mi bozuldu? O zaman gidin bir sendikaya ü
 
 ### CHANGELOG
 
-*0.93* (2025-06-16)
+**0.93** (2025-06-16)
 
 değişken isimleri tutarlı hale getirildi.
 
-*0.92* (2025-06-15)
+**0.92** (2025-06-15)
 
 İlk yayınlanış. 
