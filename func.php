@@ -396,7 +396,7 @@ function enflasyonOranlariniGetir(&$enf_orani, $enf_orani_dosyasi, $maaslar, $lo
 }
 
 // Yıllık verileri hesapla
-function yillikVerileriHesapla($maaslar, &$doviz_kurlari, $enf_oranlari, $doviz_kur_dosyasi, $log_dosyasi) {
+function yillikVerileriHesapla($maaslar, &$doviz_kurlari, $doviz_kur_dosyasi, $log_dosyasi) {
     $yillar = yillariMaaslardanGetir($maaslar);
     $baslangic_yili = min($yillar);
     $su_anki_yil = date('Y');

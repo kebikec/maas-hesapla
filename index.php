@@ -12,7 +12,6 @@ enflasyonOranlariniGetir(
 $sonuclar = yillikVerileriHesapla(
     $maaslar,
     $doviz_kurlari,
-    $enf_orani,
     $doviz_kur_dosyasi,
     $log_dosyasi,
 );
