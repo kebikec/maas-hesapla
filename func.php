@@ -479,7 +479,8 @@ function grafikVerileriniHazirla($maaslar, $doviz_kurlari, $enf_oranlari, $asgar
     $enf_ay_sayisi = 0;
 
     $asgari_ucret_birikimli_toplam = 0;
-    
+    $asgari_ay_sayisi = 0;
+
     // İlk maaş tarihini ve nominal maaşları belirle
     $ilk_maas_tarihi = null;
     $ilk_maas = null;
@@ -542,7 +543,8 @@ function grafikVerileriniHazirla($maaslar, $doviz_kurlari, $enf_oranlari, $asgar
                         $oran = $nominal_maas / $asgari_ucret;
                         $asgari_ucret_oran_verileri[] = round($oran, 2);
                         $asgari_ucret_birikimli_toplam += $oran;
-                        $asgari_ucret_ortalama_verileri[] = round($asgari_ucret_birikimli_toplam / $ay_sayisi, 2);
+                        $asgari_ay_sayisi++;
+                        $asgari_ucret_ortalama_verileri[] = round($asgari_ucret_birikimli_toplam / $asgari_ay_sayisi, 2);
                         $asgari_ucret_miktar_verileri[] = $asgari_ucret;
                     } else {
                         $asgari_ucret_oran_verileri[] = null;
