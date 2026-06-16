@@ -1,0 +1,11 @@
+{
+    "_comment_1": "maaş başlangıcı ilk öğe tarihi",
+    "_comment_2": "o yıla ait tek girdi varsa tüm yıl geçerlidir",
+    "_comment_3": "yıl içinde yyyy-mm şeklinde bir girdi varsa o tarihte zam gelmiş o noktadan sene sonuna kadar öyle hesaplanacak demektir",
+    "2022-07": 17000,
+    "2023": 25000,
+    "2024": 32000,
+    "2025-01": 40000,
+    "2025-07": 55000,
+    "2026-01": 70000
+}

@@ -1,6 +1,9 @@
 # API anahtarı (gizli)
 config.php
 
+# Kişisel maaş verisi (örnek için maas.example.json kullanın)
+maas.json
+
 # Loglar
 hata-kaydi.txt
 

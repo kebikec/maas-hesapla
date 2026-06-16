@@ -3,8 +3,9 @@
 
 Döviz kur verisini TCMB den otomatik çeker. API key falan istemez. 
 
-*maas.json* dosyasını elle güncellemeniz gerekli. 
-hangi format veri girileceğini anlamanız için dummy data girdim.
+*maas.example.json* dosyasını *maas.json* olarak kopyalayıp kendi maaş verinizle güncelleyin. 
+Örnek dosyaya hangi format veri girileceğini anlamanız için dummy data girdim. 
+*maas.json* kişisel veridir; .gitignore ile repoya girmez.
 
 > "2023"	 : 25555,
   "2023-03"	 : 26666,
