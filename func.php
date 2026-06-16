@@ -498,7 +498,6 @@ function grafikVerileriniHazirla($maaslar, $doviz_kurlari, $enf_oranlari, $asgar
         }
     }
 
-    $su_anki_nominal_maas = 100; // Başlangıç nominal maaş
     $temel_enflasyon = 1; // Birikimli enflasyon oranı (başlangıçta 1)
 
     for ($yil = $baslangic_yili; $yil <= $bitis_yili; $yil++) {
