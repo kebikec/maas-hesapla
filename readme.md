@@ -14,9 +14,11 @@ hangi format veri girileceğini anlamanız için dummy data girdim.
 türünden veri girerek sene içindeki zamları tanımlayabilirsiniz. 
 her ayın verisini tek tek girmeye gerek yok. kırılım noktaları yeterli. 
 
-Şu anda *tuik-aylik.json* dosyası elle girilmek zorunda 
-Kodun bir sonraki geliştirmesinde API ile çektirmek mümkün. 
-veriyi şu adresten alabilirsiniz: https://legalbank.net/belge/enflasyon-oranlari-tefe-ufe-tufe-oranlari/3225950
+*tuik-aylik.json* dosyası artık TCMB EVDS üzerinden otomatik güncelleniyor (resmi TÜFE Genel Endeks, aylık % değişim). 
+Bunun için ücretsiz bir EVDS API anahtarı gerekir: https://evds3.tcmb.gov.tr -> Profilim -> API Key Kopyala 
+*config.example.php* dosyasını *config.php* olarak kopyalayıp anahtarınızı girin. Anahtar girmezseniz dosya eskisi gibi elle kullanılır.
+
+**Neden config.php?** API anahtarı kişiseldir; *config.php* .gitignore ile repoya girmez.
 
 **Neden TÜİK?** 
 Tüik verilerinin makyajlı olduğunun farkında değil miyim?

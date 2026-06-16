@@ -6,6 +6,10 @@ $enf_orani_dosyasi = __DIR__ . '/tuik-aylik.json';
 $asgari_ucret_dosyasi = __DIR__ . '/asgari_ucret.json';
 $log_dosyasi = __DIR__ . '/hata-kaydi.txt';
 
+// Yerel ayarlar (API anahtarı vb.) - config.php git'e girmez
+$config = file_exists(__DIR__ . '/config.php') ? require __DIR__ . '/config.php' : [];
+$evds_api_key = $config['evds_api_key'] ?? '';
+
 // Maaş verilerini yükle
 $maaslar = [];
 if (file_exists($maas_dosyasi)) {
@@ -300,6 +304,95 @@ function topluDovizKuruGetir($tarihler, &$doviz_kurlari, $doviz_kur_dosyasi, $lo
     }    
     curl_multi_close($coklu_baglanti);
     file_put_contents($doviz_kur_dosyasi, json_encode($doviz_kurlari, JSON_PRETTY_PRINT));
+}
+
+// TÜİK aylık enflasyon oranlarını EVDS'ten çek (resmi TÜFE Genel Endeks, aylık % değişim)
+function enflasyonOranlariniGetir(&$enf_orani, $enf_orani_dosyasi, $maaslar, $log_dosyasi, $api_key) {
+    if (empty($api_key)) {
+        return; // Anahtar yoksa otomatik çekme devre dışı; mevcut dosya elle kullanılır
+    }
+
+    // En erken maaş ayını bul (başlangıç tarihi)
+    $bas_zaman = null;
+    foreach ($maaslar as $anahtar => $deger) {
+        if (strpos($anahtar, '_comment') === 0) continue;
+        if (preg_match('/^\d{4}$/', $anahtar)) {
+            $t = strtotime($anahtar . '-01-01');
+        } elseif (preg_match('/^\d{4}-\d{2}$/', $anahtar)) {
+            $t = strtotime($anahtar . '-01');
+        } else {
+            continue;
+        }
+        if ($bas_zaman === null || $t < $bas_zaman) $bas_zaman = $t;
+    }
+    if ($bas_zaman === null) return;
+
+    // Olması gereken aylar: ilk maaş ayından bu aya kadar
+    $gereken = [];
+    $imlec = $bas_zaman;
+    $bu_ay = strtotime(date('Y-m-01'));
+    while ($imlec <= $bu_ay) {
+        $gereken[] = date('Y-m', $imlec);
+        $imlec = strtotime(date('Y-m-01', $imlec) . ' +1 month');
+    }
+    $eksik = array_diff($gereken, array_keys($enf_orani));
+
+    // Hız sınırı: eksik ay yoksa ve dosya son 6 saatte güncellendiyse API'ye gitme
+    if (empty($eksik) && file_exists($enf_orani_dosyasi)
+        && (time() - filemtime($enf_orani_dosyasi)) < 6 * 3600) {
+        return;
+    }
+
+    // EVDS isteği: TÜFE Genel Endeks (2003=100), aylık (frequency=5), yüzde değişim (formulas=1)
+    $bas = date('01-m-Y', $bas_zaman);
+    $bit = date('01-m-Y');
+    $adres = "https://evds3.tcmb.gov.tr/igmevdsms-dis/series=TP.GENENDEKS.T1"
+        . "&startDate={$bas}&endDate={$bit}&type=json&frequency=5&formulas=1";
+
+    $ch = curl_init();
+    curl_setopt($ch, CURLOPT_URL, $adres);
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+    curl_setopt($ch, CURLOPT_TIMEOUT, 15);
+    curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
+    curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+    curl_setopt($ch, CURLOPT_HTTPHEADER, ['key: ' . $api_key]);
+    $yanit = curl_exec($ch);
+    $http_kodu = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+    curl_close($ch);
+
+    if ($yanit === false || $http_kodu !== 200) {
+        file_put_contents($log_dosyasi, "EVDS enflasyon isteği başarısız (HTTP $http_kodu): " . date('Y-m-d H:i:s') . "\n", FILE_APPEND);
+        return;
+    }
+    $veri = json_decode($yanit, true);
+    if (!isset($veri['items']) || !is_array($veri['items'])) {
+        file_put_contents($log_dosyasi, "EVDS enflasyon yanıtı çözümlenemedi: " . date('Y-m-d H:i:s') . "\n", FILE_APPEND);
+        return;
+    }
+
+    $degisti = false;
+    foreach ($veri['items'] as $kayit) {
+        if (!isset($kayit['Tarih'])) continue;
+        // Tarih "YYYY-M" -> "YYYY-MM"
+        $parca = explode('-', $kayit['Tarih']);
+        if (count($parca) !== 2) continue;
+        $anahtar = sprintf('%04d-%02d', (int)$parca[0], (int)$parca[1]);
+        // Değer alanı: "Tarih"/"UNIXTIME" dışındaki alan (örn. "TP_GENENDEKS_T1-1")
+        $deger = null;
+        foreach ($kayit as $alan => $v) {
+            if ($alan === 'Tarih' || $alan === 'UNIXTIME') continue;
+            $deger = $v;
+            break;
+        }
+        if ($deger === null || $deger === '') continue;
+        $enf_orani[$anahtar] = round((float)$deger, 2);
+        $degisti = true;
+    }
+
+    if ($degisti) {
+        krsort($enf_orani); // Yeni -> eski sıralama (mevcut dosya stiliyle uyumlu)
+        file_put_contents($enf_orani_dosyasi, json_encode($enf_orani, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE));
+    }
 }
 
 // Yıllık verileri hesapla

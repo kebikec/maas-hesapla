@@ -1,5 +1,13 @@
 <?php
 require_once __DIR__ . "/func.php";
+// TÜİK enflasyon oranlarını EVDS'ten otomatik güncelle (anahtar yoksa atlanır)
+enflasyonOranlariniGetir(
+    $enf_orani,
+    $enf_orani_dosyasi,
+    $maaslar,
+    $log_dosyasi,
+    $evds_api_key,
+);
 // Verileri hesapla
 $sonuclar = yillikVerileriHesapla(
     $maaslar,

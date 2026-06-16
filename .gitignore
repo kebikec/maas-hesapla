@@ -1,0 +1,8 @@
+# API anahtarı (gizli)
+config.php
+
+# Loglar
+hata-kaydi.txt
+
+# Yerel indirilen kaynak dosyaları
+_files/
