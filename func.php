@@ -262,7 +262,7 @@ function topluDovizKuruGetir($tarihler, &$doviz_kurlari, $doviz_kur_dosyasi, $lo
             curl_setopt($ch, CURLOPT_TIMEOUT, 10);
             curl_setopt($ch, CURLOPT_USERAGENT, 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36');
             curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
-            curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+            curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, true);
             curl_multi_add_handle($coklu_baglanti, $ch);
             $curl_handlelari[] = $ch;
             $tarih_handle_eslesmesi[$tarih] = $ch;
@@ -355,7 +355,7 @@ function enflasyonOranlariniGetir(&$enf_orani, $enf_orani_dosyasi, $maaslar, $lo
     curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
     curl_setopt($ch, CURLOPT_TIMEOUT, 15);
     curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
-    curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+    curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, true);
     curl_setopt($ch, CURLOPT_HTTPHEADER, ['key: ' . $api_key]);
     $yanit = curl_exec($ch);
     $http_kodu = curl_getinfo($ch, CURLINFO_HTTP_CODE);
