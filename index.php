@@ -59,7 +59,7 @@ h3 {color : #333; border-bottom : 2px solid #036de1; padding-bottom : 5px;}
         <div class="maas-bilgi">
             <h4>Maaş Bilgileri:</h4>
             <?php foreach ($maaslar as $anahtar => $maas) {
-                if (strpos($anahtar, "_comment") === 0) {
+                if (str_starts_with($anahtar, "_comment")) {
                     continue;
                 }
                 if (preg_match('/^\d{4}$/', $anahtar)) {

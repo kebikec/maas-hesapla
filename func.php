@@ -41,7 +41,7 @@ function maasiTarihIleGetir($tarih, $maaslar) {
     $uygun_maas = null;
     $en_yakin_tarih = 0;
     foreach ($maaslar as $anahtar => $maas) {        
-        if (strpos($anahtar, '_comment') === 0) {
+        if (str_starts_with($anahtar, '_comment')) {
             continue;
         }        
         $giris_tarihi = null;        
@@ -69,7 +69,7 @@ function asgariUcretGetir($tarih, $asgari_ucretler) {
     $en_yakin_tarih = 0;
 
     foreach ($asgari_ucretler as $anahtar => $ucret) {
-        if (strpos($anahtar, '_comment') === 0) continue;
+        if (str_starts_with($anahtar, '_comment')) continue;
         
         $giris_tarihi = null;
         if (preg_match('/^\d{4}$/', $anahtar)) {
@@ -90,7 +90,7 @@ function asgariUcretGetir($tarih, $asgari_ucretler) {
 function yillariMaaslardanGetir($maaslar) {
     $yillar = [];
     foreach ($maaslar as $anahtar => $maas) {
-        if (strpos($anahtar, '_comment') === 0) {
+        if (str_starts_with($anahtar, '_comment')) {
             continue;
         }        
         if (preg_match('/^(\d{4})/', $anahtar, $eslesenler)) {
@@ -316,7 +316,7 @@ function enflasyonOranlariniGetir(&$enf_orani, $enf_orani_dosyasi, $maaslar, $lo
     // En erken maaş ayını bul (başlangıç tarihi)
     $bas_zaman = null;
     foreach ($maaslar as $anahtar => $deger) {
-        if (strpos($anahtar, '_comment') === 0) continue;
+        if (str_starts_with($anahtar, '_comment')) continue;
         if (preg_match('/^\d{4}$/', $anahtar)) {
             $t = strtotime($anahtar . '-01-01');
         } elseif (preg_match('/^\d{4}-\d{2}$/', $anahtar)) {
@@ -486,7 +486,7 @@ function grafikVerileriniHazirla($maaslar, $doviz_kurlari, $enf_oranlari, $asgar
     $ilk_maas_tarihi = null;
     $ilk_maas = null;
     foreach ($maaslar as $anahtar => $maas) {
-        if (strpos($anahtar, '_comment') === 0) continue;
+        if (str_starts_with($anahtar, '_comment')) continue;
         $giris_tarihi = null;
         if (preg_match('/^\d{4}$/', $anahtar)) {
             $giris_tarihi = $anahtar . '-01-01';
