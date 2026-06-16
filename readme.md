@@ -3,6 +3,10 @@
 
 Döviz kur verisini TCMB den otomatik çeker. API key falan istemez. 
 
+## Gereksinimler
+- **PHP 7.0+** (null coalescing `??` operatörü gerektirir; 7.x ömrünü tamamladı, 8.x önerilir)
+- PHP eklentileri: `curl` (TCMB/EVDS isteği), `simplexml` (TCMB XML ayrıştırma), `json`
+
 *maas.example.json* dosyasını *maas.json* olarak kopyalayıp kendi maaş verinizle güncelleyin. 
 Örnek dosyaya hangi format veri girileceğini anlamanız için dummy data girdim. 
 *maas.json* kişisel veridir; .gitignore ile repoya girmez.
