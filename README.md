@@ -1,7 +1,7 @@
-## MAAŞ Hesapla v0.92
+## MAAŞ Hesapla v0.94
 **Amaç:** Patron sizi ne kadar kazıklıyor bunu görüp moraliniz bozulsun diye yazılmış kod. 
 
-Döviz kur verisini TCMB den otomatik çeker. API key falan istemez. 
+Döviz kur verisini TCMB den otomatik çeker. 
 
 ## Gereksinimler
 - **PHP 8.0+** (`str_starts_with` ve null coalescing `??` operatörü gerektirir)
