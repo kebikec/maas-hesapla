@@ -69,6 +69,9 @@ h3 {color : #333; border-bottom : 2px solid #036de1; padding-bottom : 5px;}
 .ortalama {font-weight: bold; color: #036de1; font-size: 1.1em;}
 .maas-bilgi {margin-bottom: 15px; padding: 10px; background-color: #ddd; border-radius: 5px;}
 .maas-bilgi h4 {margin: 0 0 10px 0; color:#464c53;}
+.success {color: #1e7e34;}
+.error {color: #ec0505;}
+.warning {color: #b8860b;}
 </style></head>
 <body>
     <div class="container">
