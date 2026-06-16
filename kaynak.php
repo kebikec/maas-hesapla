@@ -1,5 +1,17 @@
 <?php
 // TCMB döviz kuru ve EVDS enflasyon verisi çekme katmanı
+
+// Bir tarih için denenecek TCMB kur XML adreslerini döndürür
+function tcmbKurUrlleri($tarih) {
+    $yil_ay = date('Ym', strtotime($tarih));
+    $gun_ay_yil = date('dmY', strtotime($tarih));
+    $tam_tarih = date('Ymd', strtotime($tarih));
+    return [
+        "https://www.tcmb.gov.tr/kurlar/{$yil_ay}/{$gun_ay_yil}.xml",
+        "https://www.tcmb.gov.tr/kurlar/{$yil_ay}/{$tam_tarih}.xml",
+    ];
+}
+
 // Döviz kuru getir (tek tarih)
 function dovizKuruGetir($tarih, &$doviz_kurlari, $doviz_kur_dosyasi, $log_dosyasi) {
     $tarih_anahtari = $tarih;
@@ -38,13 +50,7 @@ function dovizKuruGetir($tarih, &$doviz_kurlari, $doviz_kur_dosyasi, $log_dosyas
         }
     }
     // Tarihi geçmiş için
-    $yil_ay = date('Ym', strtotime($tarih));
-    $gun_ay_yil = date('dmY', strtotime($tarih));
-    $tam_tarih = date('Ymd', strtotime($tarih));
-    $denenecek_adresler = [
-       "https://www.tcmb.gov.tr/kurlar/{$yil_ay}/{$gun_ay_yil}.xml",
-       "https://www.tcmb.gov.tr/kurlar/{$yil_ay}/{$tam_tarih}.xml"
-    ];
+    $denenecek_adresler = tcmbKurUrlleri($tarih);
     foreach ($denenecek_adresler as $adres) {
         $xml_icerik = @file_get_contents($adres, false, $baglam);
         if ($xml_icerik !== false) {
@@ -100,13 +106,7 @@ function dovizKuruGetir($tarih, &$doviz_kurlari, $doviz_kur_dosyasi, $log_dosyas
 }
 // Yardımcı döviz kuru getirme fonksiyonu
 function tarihIcinKurDegeriDene($tarih, $baglam) {
-    $yil_ay = date('Ym', strtotime($tarih));
-    $gun_ay_yil = date('dmY', strtotime($tarih));
-    $tam_tarih = date('Ymd', strtotime($tarih));
-    $denenecek_adresler = [
-        "https://www.tcmb.gov.tr/kurlar/{$yil_ay}/{$gun_ay_yil}.xml",
-        "https://www.tcmb.gov.tr/kurlar/{$yil_ay}/{$tam_tarih}.xml"
-    ];
+    $denenecek_adresler = tcmbKurUrlleri($tarih);
     foreach ($denenecek_adresler as $adres) {
         $xml_icerik = @file_get_contents($adres, false, $baglam);
         if ($xml_icerik !== false) {
@@ -137,9 +137,7 @@ function topluDovizKuruGetir($tarihler, &$doviz_kurlari, $doviz_kur_dosyasi, $lo
             if ($tarih === $bugun) {
                 $adres = "https://www.tcmb.gov.tr/kurlar/today.xml";
             } else {
-                $yil_ay = date('Ym', strtotime($tarih));
-                $gun_ay_yil = date('dmY', strtotime($tarih));
-                $adres = "https://www.tcmb.gov.tr/kurlar/{$yil_ay}/{$gun_ay_yil}.xml";
+                $adres = tcmbKurUrlleri($tarih)[0];
             }
             $ch = curl_init();
             curl_setopt($ch, CURLOPT_URL, $adres);
