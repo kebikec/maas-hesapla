@@ -529,7 +529,8 @@ function grafikVerileriniHazirla($maaslar, $doviz_kurlari, $enf_oranlari, $asgar
                             $temel_enflasyon *= (1 + $enf_orani); // Birikimli enflasyon
                         }
                         // Reel maaş her ay yeniden hesaplanır (zam + güncel birikimli enflasyon)
-                        $enf_duzeltilmis_maas = (100 / $temel_enflasyon) * ($nominal_maas / $ilk_maas);
+                        $maas_orani = ($ilk_maas > 0) ? ($nominal_maas / $ilk_maas) : 0;
+                        $enf_duzeltilmis_maas = (100 / $temel_enflasyon) * $maas_orani;
                     }
                     $enf_duzeltilmis_maas_verileri[] = round($enf_duzeltilmis_maas, 2);
                     $enf_birikimli_toplam += $enf_duzeltilmis_maas;
