@@ -142,7 +142,7 @@ function dovizKuruGetir($tarih, &$doviz_kurlari, $doviz_kur_dosyasi, $log_dosyas
                             $kur_degeri = floatval($kur->ForexBuying);
                             if ($kur_degeri > 0) {
                                 $doviz_kurlari[$tarih] = $kur_degeri;
-                                file_put_contents($doviz_kur_dosyasi, json_encode($doviz_kurlari, JSON_PRETTY_PRINT));
+                                file_put_contents($doviz_kur_dosyasi, json_encode($doviz_kurlari, JSON_PRETTY_PRINT), LOCK_EX);
                                 return $kur_degeri;
                             }
                         }
@@ -169,7 +169,7 @@ function dovizKuruGetir($tarih, &$doviz_kurlari, $doviz_kur_dosyasi, $log_dosyas
                         $kur_degeri = floatval($kur->ForexBuying);
                         if ($kur_degeri > 0) {
                            $doviz_kurlari[$tarih] = $kur_degeri;
-                           file_put_contents($doviz_kur_dosyasi, json_encode($doviz_kurlari, JSON_PRETTY_PRINT));
+                           file_put_contents($doviz_kur_dosyasi, json_encode($doviz_kurlari, JSON_PRETTY_PRINT), LOCK_EX);
                            return $kur_degeri;
                         }
                     }
@@ -190,7 +190,7 @@ function dovizKuruGetir($tarih, &$doviz_kurlari, $doviz_kur_dosyasi, $log_dosyas
             if ($kur_degeri !== null) {
                 $doviz_kurlari[$tarih] = $kur_degeri;
                 $doviz_kurlari[$onceki_tarih] = $kur_degeri;
-                file_put_contents($doviz_kur_dosyasi, json_encode($doviz_kurlari, JSON_PRETTY_PRINT));
+                file_put_contents($doviz_kur_dosyasi, json_encode($doviz_kurlari, JSON_PRETTY_PRINT), LOCK_EX);
                 return $kur_degeri;
             }
         }
@@ -200,7 +200,7 @@ function dovizKuruGetir($tarih, &$doviz_kurlari, $doviz_kur_dosyasi, $log_dosyas
             if ($kur_degeri !== null) {
                $doviz_kurlari[$tarih] = $kur_degeri;
                $doviz_kurlari[$sonraki_tarih] = $kur_degeri;
-               file_put_contents($doviz_kur_dosyasi, json_encode($doviz_kurlari, JSON_PRETTY_PRINT));
+               file_put_contents($doviz_kur_dosyasi, json_encode($doviz_kurlari, JSON_PRETTY_PRINT), LOCK_EX);
                return $kur_degeri;
             }
         }        
@@ -209,7 +209,7 @@ function dovizKuruGetir($tarih, &$doviz_kurlari, $doviz_kur_dosyasi, $log_dosyas
     // Hata kaydı bas
     file_put_contents($log_dosyasi, "Veri alınamadı: $tarih - " . date('Y-m-d H:i:s') . "\n", FILE_APPEND);
     $doviz_kurlari[$tarih] = 'Veri yok';
-    file_put_contents($doviz_kur_dosyasi, json_encode($doviz_kurlari, JSON_PRETTY_PRINT));
+    file_put_contents($doviz_kur_dosyasi, json_encode($doviz_kurlari, JSON_PRETTY_PRINT), LOCK_EX);
     return null;
 }
 // Yardımcı döviz kuru getirme fonksiyonu
@@ -303,7 +303,7 @@ function topluDovizKuruGetir($tarihler, &$doviz_kurlari, $doviz_kur_dosyasi, $lo
         curl_close($ch);
     }    
     curl_multi_close($coklu_baglanti);
-    file_put_contents($doviz_kur_dosyasi, json_encode($doviz_kurlari, JSON_PRETTY_PRINT));
+    file_put_contents($doviz_kur_dosyasi, json_encode($doviz_kurlari, JSON_PRETTY_PRINT), LOCK_EX);
 }
 
 // TÜİK aylık enflasyon oranlarını EVDS'ten çek (resmi TÜFE Genel Endeks, aylık % değişim)
@@ -391,7 +391,7 @@ function enflasyonOranlariniGetir(&$enf_orani, $enf_orani_dosyasi, $maaslar, $lo
 
     if ($degisti) {
         krsort($enf_orani); // Yeni -> eski sıralama (mevcut dosya stiliyle uyumlu)
-        file_put_contents($enf_orani_dosyasi, json_encode($enf_orani, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE));
+        file_put_contents($enf_orani_dosyasi, json_encode($enf_orani, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE), LOCK_EX);
     }
 }
 
