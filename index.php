@@ -1,5 +1,23 @@
 <?php
 require_once __DIR__ . "/func.php";
+
+// Tek bir yıl sütununu (ortalama + aylık USD değerleri) basar
+function yilSutunuBas($yil, $sonuc) {
+    echo '<div class="year-column">';
+    echo "<h3>" . $yil . " Yılı</h3>";
+    echo '<p class="ortalama">Ortalama Aylık Maaş: ' . $sonuc["average"] . ' $</p>';
+    foreach ($sonuc["monthly"] as $ay => $usd) {
+        $sinif = "success";
+        if ($usd === "Veri yok") {
+            $sinif = "error";
+        } elseif ($usd === "Maaş tanımı yok") {
+            $sinif = "warning";
+        }
+        echo '<p class="' . $sinif . '">' . $ay . ": " . $usd . ' $</p>';
+    }
+    echo "</div>";
+}
+
 // TÜİK enflasyon oranlarını EVDS'ten otomatik güncelle (anahtar yoksa atlanır)
 enflasyonOranlariniGetir(
     $enf_orani,
@@ -85,50 +103,10 @@ h3 {color : #333; border-bottom : 2px solid #036de1; padding-bottom : 5px;}
                 for ($i = 0; $i < count($sonuc_yillari); $i += 2) {
                     echo '<div class="year-row">';
                     $yil1 = $sonuc_yillari[$i];
-                    echo '<div class="year-column">';
-                    echo "<h3>" . $yil1 . " Yılı</h3>";
-                    echo '<p class="ortalama">Ortalama Aylık Maaş: ' .
-                        $sonuclar[$yil1]["average"] . 
-                        ' $</p>';
-                    foreach ($sonuclar[$yil1]["monthly"] as $ay => $usd) {
-                        $sinif = "success";
-                        if ($usd === "Veri yok") {
-                            $sinif = "error";
-                        } elseif ($usd === "Maaş tanımı yok") {
-                            $sinif = "warning";
-                        }
-                        echo '<p class="' .
-                            $sinif . 
-                            '">' .
-                            $ay . 
-                            ": " . 
-                            $usd . 
-                            ' $</p>';
-                    }
-                    echo "</div>";
+                    yilSutunuBas($yil1, $sonuclar[$yil1]);
                     if (isset($sonuc_yillari[$i + 1])) {
                         $yil2 = $sonuc_yillari[$i + 1];
-                        echo '<div class="year-column">';
-                        echo "<h3>" . $yil2 . " Yılı</h3>";
-                        echo '<p class="ortalama">Ortalama Aylık Maaş: ' .
-                            $sonuclar[$yil2]["average"] . 
-                            ' $</p>';
-                        foreach ($sonuclar[$yil2]["monthly"] as $ay => $usd) {
-                            $sinif = "success";
-                            if ($usd === "Veri yok") {
-                                $sinif = "error";
-                            } elseif ($usd === "Maaş tanımı yok") {
-                                $sinif = "warning";
-                            }
-                            echo '<p class="' .
-                                $sinif . 
-                                '">' .
-                                $ay . 
-                                ": " . 
-                                $usd . 
-                                ' $</p>';
-                        }
-                        echo "</div>";
+                        yilSutunuBas($yil2, $sonuclar[$yil2]);
                     }
                     echo "</div>";
                 }
