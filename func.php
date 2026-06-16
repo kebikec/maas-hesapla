@@ -9,6 +9,7 @@ $log_dosyasi = __DIR__ . '/hata-kaydi.txt';
 // Yerel ayarlar (API anahtarı vb.) - config.php git'e girmez
 $config = file_exists(__DIR__ . '/config.php') ? require __DIR__ . '/config.php' : [];
 $evds_api_key = $config['evds_api_key'] ?? '';
+$evds_series  = $config['evds_series'] ?? 'TP.GENENDEKS.T1';
 
 // Maaş verilerini yükle
 $maaslar = [];
@@ -307,7 +308,7 @@ function topluDovizKuruGetir($tarihler, &$doviz_kurlari, $doviz_kur_dosyasi, $lo
 }
 
 // TÜİK aylık enflasyon oranlarını EVDS'ten çek (resmi TÜFE Genel Endeks, aylık % değişim)
-function enflasyonOranlariniGetir(&$enf_orani, $enf_orani_dosyasi, $maaslar, $log_dosyasi, $api_key) {
+function enflasyonOranlariniGetir(&$enf_orani, $enf_orani_dosyasi, $maaslar, $log_dosyasi, $api_key, $seri_kodu = 'TP.GENENDEKS.T1') {
     if (empty($api_key)) {
         return; // Anahtar yoksa otomatik çekme devre dışı; mevcut dosya elle kullanılır
     }
@@ -346,7 +347,7 @@ function enflasyonOranlariniGetir(&$enf_orani, $enf_orani_dosyasi, $maaslar, $lo
     // EVDS isteği: TÜFE Genel Endeks (2003=100), aylık (frequency=5), yüzde değişim (formulas=1)
     $bas = date('01-m-Y', $bas_zaman);
     $bit = date('01-m-Y');
-    $adres = "https://evds3.tcmb.gov.tr/igmevdsms-dis/series=TP.GENENDEKS.T1"
+    $adres = "https://evds3.tcmb.gov.tr/igmevdsms-dis/series={$seri_kodu}"
         . "&startDate={$bas}&endDate={$bit}&type=json&frequency=5&formulas=1";
 
     $ch = curl_init();

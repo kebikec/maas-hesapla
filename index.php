@@ -7,6 +7,7 @@ enflasyonOranlariniGetir(
     $maaslar,
     $log_dosyasi,
     $evds_api_key,
+    $evds_series,
 );
 // Verileri hesapla
 $sonuclar = yillikVerileriHesapla(
