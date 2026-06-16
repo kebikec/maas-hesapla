@@ -521,10 +521,13 @@ function grafikVerileriniHazirla($maaslar, $doviz_kurlari, $enf_oranlari, $asgar
                     if (strtotime($tarih) === strtotime($ilk_maas_tarihi)) {
                         $enf_duzeltilmis_maas = 100; // Başlangıç ayında 100 TL
                         $temel_enflasyon = 1; // Enflasyonu sıfırla
-                    } elseif (isset($enf_oranlari[$enf_anahtari])) {
-                        $enf_orani = $enf_oranlari[$enf_anahtari] / 100; // Yüzdeyi ondalığa çevir
-                        $temel_enflasyon *= (1 + $enf_orani); // Birikimli enflasyon
-                        // Reel maaş = Nominal maaşın başlangıç maaşına oranı * (100 / birikimli enflasyon)
+                    } else {
+                        // O ayın enflasyonu varsa birikimli enflasyona ekle (yoksa o ay %0 sayılır)
+                        if (isset($enf_oranlari[$enf_anahtari])) {
+                            $enf_orani = $enf_oranlari[$enf_anahtari] / 100; // Yüzdeyi ondalığa çevir
+                            $temel_enflasyon *= (1 + $enf_orani); // Birikimli enflasyon
+                        }
+                        // Reel maaş her ay yeniden hesaplanır (zam + güncel birikimli enflasyon)
                         $enf_duzeltilmis_maas = (100 / $temel_enflasyon) * ($nominal_maas / $ilk_maas);
                     }
                     $enf_duzeltilmis_maas_verileri[] = round($enf_duzeltilmis_maas, 2);
