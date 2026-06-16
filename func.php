@@ -524,8 +524,8 @@ function grafikVerileriniHazirla($maaslar, $doviz_kurlari, $enf_oranlari, $asgar
                     } else {
                         // O ayın enflasyonu varsa birikimli enflasyona ekle (yoksa o ay %0 sayılır)
                         if (isset($enf_oranlari[$enf_anahtari])) {
-                            $enf_orani = $enf_oranlari[$enf_anahtari] / 100; // Yüzdeyi ondalığa çevir
-                            $temel_enflasyon *= (1 + $enf_orani); // Birikimli enflasyon
+                            $aylik_enf = $enf_oranlari[$enf_anahtari] / 100; // Yüzdeyi ondalığa çevir
+                            $temel_enflasyon *= (1 + $aylik_enf); // Birikimli enflasyon
                         }
                         // Reel maaş her ay yeniden hesaplanır (zam + güncel birikimli enflasyon)
                         $maas_orani = ($ilk_maas > 0) ? ($nominal_maas / $ilk_maas) : 0;
