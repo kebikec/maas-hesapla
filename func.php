@@ -2,24 +2,29 @@
 require_once __DIR__ . '/bootstrap.php';
 require_once __DIR__ . '/kaynak.php';
 
+// "2023" veya "2024-08" anahtarını başlangıç timestamp'ine çevirir; geçersiz/yorum ise null
+function girisTarihiniCoz($anahtar) {
+    if (str_starts_with($anahtar, '_comment')) {
+        return null;
+    }
+    // sadece yıl ("2023")
+    if (preg_match('/^\d{4}$/', $anahtar)) {
+        return strtotime($anahtar . '-01-01');
+    }
+    // yıl-ay ("2024-08" veya "2024-8")
+    if (preg_match('/^(\d{4})-(\d{1,2})$/', $anahtar, $m)) {
+        return strtotime($m[1] . '-' . sprintf('%02d', $m[2]) . '-01');
+    }
+    return null;
+}
+
 // Belirli tarih için maaş getir
 function maasiTarihIleGetir($tarih, $maaslar) {
     $hedef_tarih = strtotime($tarih);
     $uygun_maas = null;
     $en_yakin_tarih = 0;
-    foreach ($maaslar as $anahtar => $maas) {        
-        if (str_starts_with($anahtar, '_comment')) {
-            continue;
-        }        
-        $giris_tarihi = null;        
-        // sadece yıl ise ("2023")
-        if (preg_match('/^\d{4}$/', $anahtar)) {
-            $giris_tarihi = strtotime($anahtar . '-01-01');
-        }
-        // yıl-ay düzeni ("2024-08")
-        elseif (preg_match('/^\d{4}-\d{2}$/', $anahtar)) {
-            $giris_tarihi = strtotime($anahtar . '-01');
-        }        
+    foreach ($maaslar as $anahtar => $maas) {
+        $giris_tarihi = girisTarihiniCoz($anahtar);
         // Bu giriş hedef tarih için geçerliyse ve en yakın tarihse
         if ($giris_tarihi && $giris_tarihi <= $hedef_tarih && $giris_tarihi > $en_yakin_tarih) {
             $en_yakin_tarih = $giris_tarihi;
@@ -36,15 +41,7 @@ function asgariUcretGetir($tarih, $asgari_ucretler) {
     $en_yakin_tarih = 0;
 
     foreach ($asgari_ucretler as $anahtar => $ucret) {
-        if (str_starts_with($anahtar, '_comment')) continue;
-        
-        $giris_tarihi = null;
-        if (preg_match('/^\d{4}$/', $anahtar)) {
-            $giris_tarihi = strtotime($anahtar . '-01-01');
-        } elseif (preg_match('/^(\d{4})-(\d{1,2})$/', $anahtar, $m)) {
-            $giris_tarihi = strtotime($m[1] . '-' . sprintf('%02d', $m[2]) . '-01');
-        }
-        
+        $giris_tarihi = girisTarihiniCoz($anahtar);
         if ($giris_tarihi && $giris_tarihi <= $hedef_tarih && $giris_tarihi > $en_yakin_tarih) {
             $en_yakin_tarih = $giris_tarihi;
             $uygun_ucret = $ucret;
@@ -57,11 +54,9 @@ function asgariUcretGetir($tarih, $asgari_ucretler) {
 function yillariMaaslardanGetir($maaslar) {
     $yillar = [];
     foreach ($maaslar as $anahtar => $maas) {
-        if (str_starts_with($anahtar, '_comment')) {
-            continue;
-        }        
-        if (preg_match('/^(\d{4})/', $anahtar, $eslesenler)) {
-            $yillar[] = intval($eslesenler[1]);
+        $giris_tarihi = girisTarihiniCoz($anahtar);
+        if ($giris_tarihi) {
+            $yillar[] = (int) date('Y', $giris_tarihi);
         }
     }
     return array_unique($yillar);
@@ -168,23 +163,16 @@ function grafikVerileriniHazirla($maaslar, $doviz_kurlari, $enf_oranlari, $asgar
     $asgari_ucret_birikimli_toplam = 0;
     $asgari_ay_sayisi = 0;
 
-    // İlk maaş tarihini ve nominal maaşları belirle
+    // İlk maaş tarihini (timestamp) ve nominal maaşı belirle
     $ilk_maas_tarihi = null;
     $ilk_maas = null;
     foreach ($maaslar as $anahtar => $maas) {
-        if (str_starts_with($anahtar, '_comment')) continue;
-        $giris_tarihi = null;
-        if (preg_match('/^\d{4}$/', $anahtar)) {
-            $giris_tarihi = $anahtar . '-01-01';
-        } elseif (preg_match('/^\d{4}-\d{2}$/', $anahtar)) {
-            $giris_tarihi = $anahtar . '-01';
-        }
-        if ($giris_tarihi && (!$ilk_maas_tarihi || strtotime($giris_tarihi) < strtotime($ilk_maas_tarihi))) {
+        $giris_tarihi = girisTarihiniCoz($anahtar);
+        if ($giris_tarihi && ($ilk_maas_tarihi === null || $giris_tarihi < $ilk_maas_tarihi)) {
             $ilk_maas_tarihi = $giris_tarihi;
             $ilk_maas = $maas;
         }
     }
-
     $temel_enflasyon = 1; // Birikimli enflasyon oranı (başlangıçta 1)
 
     for ($yil = $baslangic_yili; $yil <= $bitis_yili; $yil++) {
@@ -192,7 +180,7 @@ function grafikVerileriniHazirla($maaslar, $doviz_kurlari, $enf_oranlari, $asgar
         for ($ay = 1; $ay <= $ay_limiti; $ay++) {
             $tarih = ilkIsgununuGetir($yil, $ay);
             $nominal_maas = maasiTarihIleGetir($tarih, $maaslar);
-            if ($nominal_maas !== null && strtotime($tarih) >= strtotime($ilk_maas_tarihi)) {
+            if ($nominal_maas !== null && strtotime($tarih) >= $ilk_maas_tarihi) {
                 $kur = $doviz_kurlari[$tarih] ?? null;
                 if ($kur !== null && $kur !== 'Veri yok' && $kur > 0) {
                     // USD Hesabı
@@ -205,7 +193,7 @@ function grafikVerileriniHazirla($maaslar, $doviz_kurlari, $enf_oranlari, $asgar
 
                     // Enflasyon düzeltilmiş maaş hesaplama
                     $enf_anahtari = sprintf('%d-%02d', $yil, $ay);
-                    if (strtotime($tarih) === strtotime($ilk_maas_tarihi)) {
+                    if (strtotime($tarih) === $ilk_maas_tarihi) {
                         $enf_duzeltilmis_maas = 100; // Başlangıç ayında 100 TL
                         $temel_enflasyon = 1; // Enflasyonu sıfırla
                     } else {

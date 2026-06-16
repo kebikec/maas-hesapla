@@ -1,6 +1,5 @@
 <?php
 // TCMB döviz kuru ve EVDS enflasyon verisi çekme katmanı
-
 // Döviz kuru getir (tek tarih)
 function dovizKuruGetir($tarih, &$doviz_kurlari, $doviz_kur_dosyasi, $log_dosyasi) {
     $tarih_anahtari = $tarih;
@@ -202,15 +201,10 @@ function enflasyonOranlariniGetir(&$enf_orani, $enf_orani_dosyasi, $maaslar, $lo
     // En erken maaş ayını bul (başlangıç tarihi)
     $bas_zaman = null;
     foreach ($maaslar as $anahtar => $deger) {
-        if (str_starts_with($anahtar, '_comment')) continue;
-        if (preg_match('/^\d{4}$/', $anahtar)) {
-            $t = strtotime($anahtar . '-01-01');
-        } elseif (preg_match('/^\d{4}-\d{2}$/', $anahtar)) {
-            $t = strtotime($anahtar . '-01');
-        } else {
-            continue;
+        $t = girisTarihiniCoz($anahtar);
+        if ($t && ($bas_zaman === null || $t < $bas_zaman)) {
+            $bas_zaman = $t;
         }
-        if ($bas_zaman === null || $t < $bas_zaman) $bas_zaman = $t;
     }
     if ($bas_zaman === null) return;
 
@@ -275,7 +269,6 @@ function enflasyonOranlariniGetir(&$enf_orani, $enf_orani_dosyasi, $maaslar, $lo
         $enf_orani[$anahtar] = round((float)$deger, 2);
         $degisti = true;
     }
-
     if ($degisti) {
         krsort($enf_orani); // Yeni -> eski sıralama (mevcut dosya stiliyle uyumlu)
         file_put_contents($enf_orani_dosyasi, json_encode($enf_orani, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE), LOCK_EX);
